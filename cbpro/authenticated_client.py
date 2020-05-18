@@ -26,8 +26,10 @@ class AuthenticatedClient(PublicClient):
         auth (CBProAuth): Custom authentication handler for each request.
         session (requests.Session): Persistent HTTP connection object.
     """
-    def __init__(self, key, b64secret, passphrase,
-                 api_url="https://api.pro.coinbase.com"):
+
+    def __init__(
+        self, key, b64secret, passphrase, api_url="https://api.pro.coinbase.com"
+    ):
         """ Create an instance of the AuthenticatedClient class.
 
         Args:
@@ -58,7 +60,7 @@ class AuthenticatedClient(PublicClient):
                     "currency": "USD"
                 }
         """
-        return self._send_message('get', '/accounts/' + account_id)
+        return self._send_message("get", "/accounts/" + account_id)
 
     def get_accounts(self):
         """ Get a list of trading all accounts.
@@ -86,7 +88,7 @@ class AuthenticatedClient(PublicClient):
 
         * Additional info included in response for margin accounts.
         """
-        return self.get_account('')
+        return self.get_account("")
 
     def get_account_history(self, account_id, **kwargs):
         """ List account activity. Account activity either increases or
@@ -125,7 +127,7 @@ class AuthenticatedClient(PublicClient):
                     }
                 ]
         """
-        endpoint = '/accounts/{}/ledger'.format(account_id)
+        endpoint = "/accounts/{}/ledger".format(account_id)
         return self._send_paginated_message(endpoint, params=kwargs)
 
     def get_account_holds(self, account_id, **kwargs):
@@ -170,7 +172,7 @@ class AuthenticatedClient(PublicClient):
                 ]
 
         """
-        endpoint = '/accounts/{}/holds'.format(account_id)
+        endpoint = "/accounts/{}/holds".format(account_id)
         return self._send_paginated_message(endpoint, params=kwargs)
 
     def place_order(self, product_id, side, order_type=None, **kwargs):
@@ -225,35 +227,46 @@ class AuthenticatedClient(PublicClient):
 
         """
         # Margin parameter checks
-        if kwargs.get('overdraft_enabled') is not None and \
-                kwargs.get('funding_amount') is not None:
-            raise ValueError('Margin funding must be specified through use of '
-                             'overdraft or by setting a funding amount, but not'
-                             ' both')
+        if (
+            kwargs.get("overdraft_enabled") is not None
+            and kwargs.get("funding_amount") is not None
+        ):
+            raise ValueError(
+                "Margin funding must be specified through use of "
+                "overdraft or by setting a funding amount, but not"
+                " both"
+            )
 
         # Limit order checks
-        if order_type == 'limit':
-            if kwargs.get('cancel_after') is not None and \
-                    kwargs.get('time_in_force') != 'GTT':
-                raise ValueError('May only specify a cancel period when time '
-                                 'in_force is `GTT`')
-            if kwargs.get('post_only') is not None and kwargs.get('time_in_force') in \
-                    ['IOC', 'FOK']:
-                raise ValueError('post_only is invalid when time in force is '
-                                 '`IOC` or `FOK`')
+        if order_type == "limit":
+            if (
+                kwargs.get("cancel_after") is not None
+                and kwargs.get("time_in_force") != "GTT"
+            ):
+                raise ValueError(
+                    "May only specify a cancel period when time "
+                    "in_force is `GTT`"
+                )
+            if kwargs.get("post_only") is not None and kwargs.get(
+                "time_in_force"
+            ) in ["IOC", "FOK"]:
+                raise ValueError(
+                    "post_only is invalid when time in force is "
+                    "`IOC` or `FOK`"
+                )
 
         # Market and stop order checks
-        if order_type == 'market' or kwargs.get('stop'):
-            if not (kwargs.get('size') is None) ^ (kwargs.get('funds') is None):
-                raise ValueError('Either `size` or `funds` must be specified '
-                                 'for market/stop orders (but not both).')
+        if order_type == "market" or kwargs.get("stop"):
+            if not (kwargs.get("size") is None) ^ (kwargs.get("funds") is None):
+                raise ValueError(
+                    "Either `size` or `funds` must be specified "
+                    "for market/stop orders (but not both)."
+                )
 
         # Build params dict
-        params = {'product_id': product_id,
-                  'side': side,
-                  'type': order_type}
+        params = {"product_id": product_id, "side": side, "type": order_type}
         params.update(kwargs)
-        return self._send_message('post', '/orders', data=json.dumps(params))
+        return self._send_message("post", "/orders", data=json.dumps(params))
 
     def buy(self, product_id, order_type, **kwargs):
         """Place a buy order.
@@ -273,7 +286,7 @@ class AuthenticatedClient(PublicClient):
             dict: Order details. See `place_order` for example.
 
         """
-        return self.place_order(product_id, 'buy', order_type, **kwargs)
+        return self.place_order(product_id, "buy", order_type, **kwargs)
 
     def sell(self, product_id, order_type, **kwargs):
         """Place a sell order.
@@ -293,16 +306,22 @@ class AuthenticatedClient(PublicClient):
             dict: Order details. See `place_order` for example.
 
         """
-        return self.place_order(product_id, 'sell', order_type, **kwargs)
+        return self.place_order(product_id, "sell", order_type, **kwargs)
 
-    def place_limit_order(self, product_id, side, price, size,
-                          client_oid=None,
-                          stp=None,
-                          time_in_force=None,
-                          cancel_after=None,
-                          post_only=None,
-                          overdraft_enabled=None,
-                          funding_amount=None):
+    def place_limit_order(
+        self,
+        product_id,
+        side,
+        price,
+        size,
+        client_oid=None,
+        stp=None,
+        time_in_force=None,
+        cancel_after=None,
+        post_only=None,
+        overdraft_enabled=None,
+        funding_amount=None,
+    ):
         """Place a limit order.
 
         Args:
@@ -335,27 +354,35 @@ class AuthenticatedClient(PublicClient):
             dict: Order details. See `place_order` for example.
 
         """
-        params = {'product_id': product_id,
-                  'side': side,
-                  'order_type': 'limit',
-                  'price': price,
-                  'size': size,
-                  'client_oid': client_oid,
-                  'stp': stp,
-                  'time_in_force': time_in_force,
-                  'cancel_after': cancel_after,
-                  'post_only': post_only,
-                  'overdraft_enabled': overdraft_enabled,
-                  'funding_amount': funding_amount}
+        params = {
+            "product_id": product_id,
+            "side": side,
+            "order_type": "limit",
+            "price": price,
+            "size": size,
+            "client_oid": client_oid,
+            "stp": stp,
+            "time_in_force": time_in_force,
+            "cancel_after": cancel_after,
+            "post_only": post_only,
+            "overdraft_enabled": overdraft_enabled,
+            "funding_amount": funding_amount,
+        }
         params = dict((k, v) for k, v in params.items() if v is not None)
 
         return self.place_order(**params)
 
-    def place_market_order(self, product_id, side, size=None, funds=None,
-                           client_oid=None,
-                           stp=None,
-                           overdraft_enabled=None,
-                           funding_amount=None):
+    def place_market_order(
+        self,
+        product_id,
+        side,
+        size=None,
+        funds=None,
+        client_oid=None,
+        stp=None,
+        overdraft_enabled=None,
+        funding_amount=None,
+    ):
         """ Place market order.
 
         Args:
@@ -379,24 +406,35 @@ class AuthenticatedClient(PublicClient):
             dict: Order details. See `place_order` for example.
 
         """
-        params = {'product_id': product_id,
-                  'side': side,
-                  'order_type': 'market',
-                  'size': size,
-                  'funds': funds,
-                  'client_oid': client_oid,
-                  'stp': stp,
-                  'overdraft_enabled': overdraft_enabled,
-                  'funding_amount': funding_amount}
+        params = {
+            "product_id": product_id,
+            "side": side,
+            "order_type": "market",
+            "size": size,
+            "funds": funds,
+            "client_oid": client_oid,
+            "stp": stp,
+            "overdraft_enabled": overdraft_enabled,
+            "funding_amount": funding_amount,
+        }
         params = dict((k, v) for k, v in params.items() if v is not None)
 
         return self.place_order(**params)
 
-    def place_stop_order(self, product_id, side, stop_type, stop_price, limit_price, size=None, funds=None,
-                         client_oid=None,
-                         stp=None,
-                         overdraft_enabled=None,
-                         funding_amount=None):
+    def place_stop_order(
+        self,
+        product_id,
+        side,
+        stop_type,
+        stop_price,
+        limit_price,
+        size=None,
+        funds=None,
+        client_oid=None,
+        stp=None,
+        overdraft_enabled=None,
+        funding_amount=None,
+    ):
         """ Place stop order.
 
         Args:
@@ -426,21 +464,27 @@ class AuthenticatedClient(PublicClient):
 
         """
 
-        if (side == 'buy' and stop_type == 'loss') or (side == 'sell' and stop_type == 'entry'):
-            raise ValueError(f'Invalid stop order, combination of {side} and {stop_type} is not possible')
+        if (side == "buy" and stop_type == "loss") or (
+            side == "sell" and stop_type == "entry"
+        ):
+            raise ValueError(
+                f"Invalid stop order, combination of {side} and {stop_type} is not possible"
+            )
 
-        params = {'product_id': product_id,
-                  'side': side,
-                  'price': limit_price,
-                  'order_type': None,
-                  'stop': stop_type,
-                  'stop_price': stop_price,
-                  'size': size,
-                  'funds': funds,
-                  'client_oid': client_oid,
-                  'stp': stp,
-                  'overdraft_enabled': overdraft_enabled,
-                  'funding_amount': funding_amount}
+        params = {
+            "product_id": product_id,
+            "side": side,
+            "price": limit_price,
+            "order_type": None,
+            "stop": stop_type,
+            "stop_price": stop_price,
+            "size": size,
+            "funds": funds,
+            "client_oid": client_oid,
+            "stp": stp,
+            "overdraft_enabled": overdraft_enabled,
+            "funding_amount": funding_amount,
+        }
         params = dict((k, v) for k, v in params.items() if v is not None)
 
         return self.place_order(**params)
@@ -465,7 +509,7 @@ class AuthenticatedClient(PublicClient):
                 [ "c5ab5eae-76be-480e-8961-00792dc7e138" ]
 
         """
-        return self._send_message('delete', '/orders/' + order_id)
+        return self._send_message("delete", "/orders/" + order_id)
 
     def cancel_all(self, product_id=None):
         """ With best effort, cancel all open orders.
@@ -486,10 +530,49 @@ class AuthenticatedClient(PublicClient):
 
         """
         if product_id is not None:
-            params = {'product_id': product_id}
+            params = {"product_id": product_id}
         else:
             params = None
-        return self._send_message('delete', '/orders', params=params)
+        return self._send_message("delete", "/orders", params=params)
+
+    def get_profiles(self, **kwargs):
+        """List Profiles
+
+        List all account profiles (also known as portfolios).
+
+        Returns:
+        [
+            {
+                "id": "86602c68-306a-4500-ac73-4ce56a91d83c",
+                "user_id": "5844eceecf7e803e259d0365",
+                "name": "default",
+                "active": true,
+                "is_default": true,
+                "created_at": "2019-11-18T15:08:40.236309Z"
+            }
+        ]
+        """
+        return self._send_message("get", "/profiles")
+
+    def get_profile(self, profile_id, **kwargs):
+        """Get a Profile
+
+        Get a single profile by profile id.
+
+        Args:
+        profile_id(str): The profile id to get
+
+        Returns:
+        {
+            "id": "86602c68-306a-4500-ac73-4ce56a91d83c",
+            "user_id": "5844eceecf7e803e259d0365",
+            "name": "default",
+            "active": true,
+            "is_default": true,
+            "created_at": "2019-11-18T15:08:40.236309Z"
+        }
+        """
+        return self._send_message("get", "/profile/" + profile_id)
 
     def get_order(self, order_id):
         """ Get a single order by order id.
@@ -524,7 +607,7 @@ class AuthenticatedClient(PublicClient):
                 }
 
         """
-        return self._send_message('get', '/orders/' + order_id)
+        return self._send_message("get", "/orders/" + order_id)
 
     def get_orders(self, product_id=None, status=None, **kwargs):
         """ List your current open orders.
@@ -586,10 +669,10 @@ class AuthenticatedClient(PublicClient):
         """
         params = kwargs
         if product_id is not None:
-            params['product_id'] = product_id
+            params["product_id"] = product_id
         if status is not None:
-            params['status'] = status
-        return self._send_paginated_message('/orders', params=params)
+            params["status"] = status
+        return self._send_paginated_message("/orders", params=params)
 
     def get_fills(self, product_id=None, order_id=None, **kwargs):
         """ Get a list of recent fills.
@@ -638,16 +721,16 @@ class AuthenticatedClient(PublicClient):
 
         """
         if (product_id is None) and (order_id is None):
-            raise ValueError('Either product_id or order_id must be specified.')
+            raise ValueError("Either product_id or order_id must be specified.")
 
         params = {}
         if product_id:
-            params['product_id'] = product_id
+            params["product_id"] = product_id
         if order_id:
-            params['order_id'] = order_id
+            params["order_id"] = order_id
         params.update(kwargs)
 
-        return self._send_paginated_message('/fills', params=params)
+        return self._send_paginated_message("/fills", params=params)
 
     def get_fundings(self, status=None, **kwargs):
         """ Every order placed with a margin profile that draws funding
@@ -684,9 +767,9 @@ class AuthenticatedClient(PublicClient):
         """
         params = {}
         if status is not None:
-            params['status'] = status
+            params["status"] = status
         params.update(kwargs)
-        return self._send_paginated_message('/funding', params=params)
+        return self._send_paginated_message("/funding", params=params)
 
     def repay_funding(self, amount, currency):
         """ Repay funding. Repays the older funding records first.
@@ -699,15 +782,14 @@ class AuthenticatedClient(PublicClient):
             Not specified by cbpro.
 
         """
-        params = {
-            'amount': amount,
-            'currency': currency  # example: USD
-            }
-        return self._send_message('post', '/funding/repay',
-                                  data=json.dumps(params))
+        params = {"amount": amount, "currency": currency}  # example: USD
+        return self._send_message(
+            "post", "/funding/repay", data=json.dumps(params)
+        )
 
-    def margin_transfer(self, margin_profile_id, transfer_type, currency,
-                        amount):
+    def margin_transfer(
+        self, margin_profile_id, transfer_type, currency, amount
+    ):
         """ Transfer funds between your standard profile and a margin profile.
 
         Args:
@@ -736,12 +818,15 @@ class AuthenticatedClient(PublicClient):
                 }
 
         """
-        params = {'margin_profile_id': margin_profile_id,
-                  'type': transfer_type,
-                  'currency': currency,  # example: USD
-                  'amount': amount}
-        return self._send_message('post', '/profiles/margin-transfer',
-                                  data=json.dumps(params))
+        params = {
+            "margin_profile_id": margin_profile_id,
+            "type": transfer_type,
+            "currency": currency,  # example: USD
+            "amount": amount,
+        }
+        return self._send_message(
+            "post", "/profiles/margin-transfer", data=json.dumps(params)
+        )
 
     def get_position(self):
         """ Get An overview of your margin profile.
@@ -750,7 +835,7 @@ class AuthenticatedClient(PublicClient):
             dict: Details about funding, accounts, and margin call.
 
         """
-        return self._send_message('get', '/position')
+        return self._send_message("get", "/position")
 
     def close_position(self, repay_only):
         """ Close position.
@@ -762,9 +847,10 @@ class AuthenticatedClient(PublicClient):
             Undocumented
 
         """
-        params = {'repay_only': repay_only}
-        return self._send_message('post', '/position/close',
-                                  data=json.dumps(params))
+        params = {"repay_only": repay_only}
+        return self._send_message(
+            "post", "/position/close", data=json.dumps(params)
+        )
 
     def deposit(self, amount, currency, payment_method_id):
         """ Deposit funds from a payment method.
@@ -787,11 +873,14 @@ class AuthenticatedClient(PublicClient):
                 }
 
         """
-        params = {'amount': amount,
-                  'currency': currency,
-                  'payment_method_id': payment_method_id}
-        return self._send_message('post', '/deposits/payment-method',
-                                  data=json.dumps(params))
+        params = {
+            "amount": amount,
+            "currency": currency,
+            "payment_method_id": payment_method_id,
+        }
+        return self._send_message(
+            "post", "/deposits/payment-method", data=json.dumps(params)
+        )
 
     def coinbase_deposit(self, amount, currency, coinbase_account_id):
         """ Deposit funds from a coinbase account.
@@ -817,11 +906,14 @@ class AuthenticatedClient(PublicClient):
                 }
 
         """
-        params = {'amount': amount,
-                  'currency': currency,
-                  'coinbase_account_id': coinbase_account_id}
-        return self._send_message('post', '/deposits/coinbase-account',
-                                  data=json.dumps(params))
+        params = {
+            "amount": amount,
+            "currency": currency,
+            "coinbase_account_id": coinbase_account_id,
+        }
+        return self._send_message(
+            "post", "/deposits/coinbase-account", data=json.dumps(params)
+        )
 
     def withdraw(self, amount, currency, payment_method_id):
         """ Withdraw funds to a payment method.
@@ -844,11 +936,14 @@ class AuthenticatedClient(PublicClient):
                 }
 
         """
-        params = {'amount': amount,
-                  'currency': currency,
-                  'payment_method_id': payment_method_id}
-        return self._send_message('post', '/withdrawals/payment-method',
-                                  data=json.dumps(params))
+        params = {
+            "amount": amount,
+            "currency": currency,
+            "payment_method_id": payment_method_id,
+        }
+        return self._send_message(
+            "post", "/withdrawals/payment-method", data=json.dumps(params)
+        )
 
     def coinbase_withdraw(self, amount, currency, coinbase_account_id):
         """ Withdraw funds to a coinbase account.
@@ -874,11 +969,14 @@ class AuthenticatedClient(PublicClient):
                 }
 
         """
-        params = {'amount': amount,
-                  'currency': currency,
-                  'coinbase_account_id': coinbase_account_id}
-        return self._send_message('post', '/withdrawals/coinbase-account',
-                                  data=json.dumps(params))
+        params = {
+            "amount": amount,
+            "currency": currency,
+            "coinbase_account_id": coinbase_account_id,
+        }
+        return self._send_message(
+            "post", "/withdrawals/coinbase-account", data=json.dumps(params)
+        )
 
     def crypto_withdraw(self, amount, currency, crypto_address):
         """ Withdraw funds to a crypto address.
@@ -897,11 +995,14 @@ class AuthenticatedClient(PublicClient):
                 }
 
         """
-        params = {'amount': amount,
-                  'currency': currency,
-                  'crypto_address': crypto_address}
-        return self._send_message('post', '/withdrawals/crypto',
-                                  data=json.dumps(params))
+        params = {
+            "amount": amount,
+            "currency": currency,
+            "crypto_address": crypto_address,
+        }
+        return self._send_message(
+            "post", "/withdrawals/crypto", data=json.dumps(params)
+        )
 
     def get_payment_methods(self):
         """ Get a list of your payment methods.
@@ -910,7 +1011,7 @@ class AuthenticatedClient(PublicClient):
             list: Payment method details.
 
         """
-        return self._send_message('get', '/payment-methods')
+        return self._send_message("get", "/payment-methods")
 
     def get_coinbase_accounts(self):
         """ Get a list of your coinbase accounts.
@@ -919,10 +1020,18 @@ class AuthenticatedClient(PublicClient):
             list: Coinbase account details.
 
         """
-        return self._send_message('get', '/coinbase-accounts')
+        return self._send_message("get", "/coinbase-accounts")
 
-    def create_report(self, report_type, start_date, end_date, product_id=None,
-                      account_id=None, report_format='pdf', email=None):
+    def create_report(
+        self,
+        report_type,
+        start_date,
+        end_date,
+        product_id=None,
+        account_id=None,
+        report_format="pdf",
+        email=None,
+    ):
         """ Create report of historic information about your account.
 
         The report will be generated when resources are available. Report status
@@ -956,19 +1065,20 @@ class AuthenticatedClient(PublicClient):
                 }
 
         """
-        params = {'type': report_type,
-                  'start_date': start_date,
-                  'end_date': end_date,
-                  'format': report_format}
+        params = {
+            "type": report_type,
+            "start_date": start_date,
+            "end_date": end_date,
+            "format": report_format,
+        }
         if product_id is not None:
-            params['product_id'] = product_id
+            params["product_id"] = product_id
         if account_id is not None:
-            params['account_id'] = account_id
+            params["account_id"] = account_id
         if email is not None:
-            params['email'] = email
+            params["email"] = email
 
-        return self._send_message('post', '/reports',
-                                  data=json.dumps(params))
+        return self._send_message("post", "/reports", data=json.dumps(params))
 
     def get_report(self, report_id):
         """ Get report status.
@@ -982,7 +1092,7 @@ class AuthenticatedClient(PublicClient):
             dict: Report details, including file url once it is created.
 
         """
-        return self._send_message('get', '/reports/' + report_id)
+        return self._send_message("get", "/reports/" + report_id)
 
     def get_trailing_volume(self):
         """  Get your 30-day trailing volume for all products.
@@ -1004,7 +1114,7 @@ class AuthenticatedClient(PublicClient):
                 ]
 
         """
-        return self._send_message('get', '/users/self/trailing-volume')
+        return self._send_message("get", "/users/self/trailing-volume")
 
     def get_fees(self):
         """ Get your maker & taker fee rates and 30-day trailing volume.
@@ -1017,4 +1127,5 @@ class AuthenticatedClient(PublicClient):
                     "usd_volume": "25000.00"
                 }
         """
-        return self._send_message('get', '/fees')
+        return self._send_message("get", "/fees")
+
