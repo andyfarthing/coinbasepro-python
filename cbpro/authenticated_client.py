@@ -572,7 +572,7 @@ class AuthenticatedClient(PublicClient):
             "created_at": "2019-11-18T15:08:40.236309Z"
         }
         """
-        return self._send_message("get", "/profile/" + profile_id)
+        return self._send_message("get", "/profiles/" + profile_id)
 
     def get_order(self, order_id):
         """ Get a single order by order id.
@@ -1128,4 +1128,3 @@ class AuthenticatedClient(PublicClient):
                 }
         """
         return self._send_message("get", "/fees")
-
